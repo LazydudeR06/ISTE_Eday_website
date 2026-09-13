@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Engineers' Day Treasure Hunt</title>
+    <style>
+        /* Blueprint / Tech Theme */
+        :root {
+            --bg-base: #0a1128;
+            --grid-line: rgba(56, 189, 248, 0.15);
+            --text-main: #e2e8f0;
+            --text-blue: #38bdf8;
+            --accent-orange: #fca5a5;
+            --btn-orange: #f6c07a;
+            --btn-orange-hover: #e5ad67;
+            --box-bg: rgba(15, 23, 42, 0.85);
+            --border-blue: rgba(56, 189, 248, 0.4);
+            --white-box: #f8f6f0;
+            --text-dark: #1e293b;
+            --error: #ef4444;
+            --success: #22c55e;
+        }
+
+        /* Anti-Cheat: Prevent text selection and long-press copying */
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-base);
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 25px 25px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            user-select: none; /* Prevents selecting text */
+            -webkit-user-select: none;
+            -webkit-touch-callout: none; /* Prevents iOS copy popup */
+        }
+
+        /* Anti-Cheat Watermark */
+        #watermark-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none; /* Lets clicks pass through */
+            z-index: 9999;
+            display: none;
+            overflow: hidden;
+            opacity: 0.05;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            word-wrap: break-word;
+            line-height: 3;
+            text-align: justify;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-blue);
+            padding-bottom: 10px;
+        }
+
+        .header-left { display: flex; flex-direction: column; }
+
+        .stage-indicator {
+            color: var(--text-blue);
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .team-display { font-size: 0.9rem; color: var(--text-main); }
+        .timer-display { text-align: right; }
+        
+        .timer-label {
+            font-size: 0.7rem;
+            color: var(--text-blue);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .time-value { font-size: 1.5rem; font-weight: bold; color: #fff; }
+        .timer-paused { color: var(--btn-orange); }
+
+        .game-container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Registration Box */
+        .registration-box {
+            background-color: var(--box-bg);
+            border: 1px solid var(--border-blue);
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        .registration-box h2 {
+            margin-top: 0;
+            color: var(--btn-orange);
+            text-transform: uppercase;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        /* Puzzle Box */
+        .puzzle-box {
+            background-color: var(--box-bg);
+            border: 1px solid var(--border-blue);
+            padding: 20px;
+            position: relative;
+            background-image: 
+                linear-gradient(var(--border-blue), var(--border-blue)),
+                linear-gradient(var(--border-blue), var(--border-blue));
+            background-size: 10px 2px, 2px 10px;
+            background-position: left top, left top;
+            background-repeat: no-repeat;
+        }
+
+        .category-label {
+            color: var(--accent-orange);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .puzzle-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 15px;
+            margin-top: 0;
+        }
+
+        .puzzle-text { font-size: 1rem; line-height: 1.5; margin-bottom: 20px; }
+        
+        .code-block {
+            background-color: #050b14;
+            padding: 15px;
+            border-left: 3px solid var(--text-blue);
+            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: stretch;
+            background-color: #050b14;
+            border: 1px solid var(--border-blue);
+        }
+
+        .input-prefix {
+            padding: 12px 15px;
+            color: var(--text-blue);
+            background-color: #050b14;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"], select {
+            flex-grow: 1;
+            padding: 12px;
+            background-color: transparent;
+            border: none;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            width: 100%;
+        }
+        
+        .reg-input {
+            border: 1px solid var(--border-blue) !important;
+            margin-bottom: 15px;
+            background-color: #050b14 !important;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus { outline: none; }
+
+        button {
+            padding: 12px 20px;
+            background-color: var(--btn-orange);
+            color: var(--text-dark);
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            transition: background-color 0.2s;
+        }
+
+        button:hover { background-color: var(--btn-orange-hover); }
+        button:disabled { background-color: #555; color: #222; cursor: not-allowed; }
+
+        .feedback-text { margin-top: 10px; font-size: 0.9rem; min-height: 1.2rem; }
+        .text-success { color: var(--success); }
+        .text-error { color: var(--error); }
+
+        /* Field Clue Box */
+        .field-box {
+            background-color: var(--white-box);
+            color: var(--text-dark);
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .field-box.active { display: block; }
+        .field-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .pin-icon { color: var(--error); font-size: 1.2rem; }
+        .field-subtitle { font-size: 0.8rem; color: #a39b8b; letter-spacing: 2px; text-transform: uppercase; }
+        .field-desc { font-size: 1rem; margin-bottom: 20px; line-height: 1.4; }
+        .site-input-row { display: flex; background-color: #fff; border: 1px solid #ccc; }
+        .site-input-row input { color: var(--text-dark); }
+        .site-input-row button { background-color: var(--btn-orange); }
+
+        /* Disqualified Screen */
+        #disqualified-screen {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            background-color: #450a0a; /* Dark red */
+            border: 2px solid var(--error);
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        
+        #disqualified-screen h1 { color: var(--error); text-transform: uppercase; margin-top: 0;}
+        #disqualified-screen p { color: #fca5a5; font-size: 1.1rem; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <!-- Watermark layer for screenshot deterrence -->
+    <div id="watermark-layer"></div>
+
+    <!-- Header -->
+    <div class="header" id="game-header" style="display: none;">
+        <div class="header-left">
+            <div class="stage-indicator" id="stage-display">STAGE 1/8</div>
+            <div class="team-display" id="team-display">Team: [Name] | Sem: [X]</div>
+        </div>
+        <div class="timer-display">
+            <div class="timer-label">TIME</div>
+            <div class="time-value" id="time-display">00:00</div>
+        </div>
+    </div>
+
+    <!-- Game Content Container -->
+    <div class="game-container" id="game-container"></div>
+
+    <!-- Disqualified Container -->
+    <div id="disqualified-screen">
+        <h1>SECURITY BREACH</h1>
+        <p><strong>System Lockout Triggered.</strong></p>
+        <p>Tab switching, minimizing the browser window, or backgrounding the application is strictly prohibited during the technical hunt.</p>
+        <p>Your team has been disqualified. Please report to the organizers.</p>
+    </div>
+
+    <script>
+        // ==========================================
+        // DATABASE: ADD YOUR 8 QUESTIONS PER SECTION
+        // ==========================================
+        const db = {
+            easy: [
+                {
+                    category: "CAMPUS LOGIC",
+                    title: "The Main Gate",
+                    questionText: "Count the number of pillars at the main entrance.",
+                    codeBlock: "", // Leave empty if no code snippet needed
+                    digitalAnswer: "4", 
+                    fieldClue: "Head to the primary noticeboard outside the Civil Department.",
+                    siteCode: "ED-1001" // Format: ED-XXXX
+                },
+                {
+                    category: "BASIC MATH",
+                    title: "Canteen Calculation",
+                    questionText: "If 3 samosas cost ₹45, how much do 7 samosas cost?",
+                    codeBlock: "",
+                    digitalAnswer: "105",
+                    fieldClue: "Check under the third table in the main canteen.",
+                    siteCode: "ED-1002"
+                },
+                {   
+                    category: "MIND TEASER", 
+                    title: "Farmers Cattle", 
+                    questionText: "A farmer has 17 sheep, and all but 9 die. How many sheep are left?", 
+                    codeBlock: "", 
+                    digitalAnswer: "9", 
+                    fieldClue: "Check behind the biggest tree near the NCC office", 
+                    siteCode: "ED-1003" 
+                },
+                { 
+                    category: "LOGICAL", 
+                    title: "Gates", 
+                    questionText: "A logic gate has inputs A=1, B=0, C=1. It implements the expression (A AND B) OR (NOT C). What is the output?", 
+                    codeBlock: "", 
+                    digitalAnswer: "0", 
+                    fieldClue: "", 
+                    siteCode: "ED-1004" 
+                },
+                { 
+                    category: "LOGICAL", 
+                    title: "Deep Well", 
+                    questionText: " A snail is at the bottom of a 10-meter well. Each day it climbs 3 meters, but each night it slips back 2 meters. On which day does it reach the top?", 
+                    codeBlock: "", 
+                    digitalAnswer: "8", 
+                    fieldClue: "[Add Field Clue 5]", 
+                    siteCode: "ED-1005" 
+                },
+                { category: "PUZZLE", title: "Easy Q6", questionText: "[Add Question 6 Here]", codeBlock: "", digitalAnswer: "answer6", fieldClue: "[Add Field Clue 6]", siteCode: "ED-1006" },
+                { category: "PUZZLE", title: "Easy Q7", questionText: "[Add Question 7 Here]", codeBlock: "", digitalAnswer: "answer7", fieldClue: "[Add Field Clue 7]", siteCode: "ED-1007" },
+                { category: "PUZZLE", title: "Easy Q8", questionText: "[Add Question 8 Here]", codeBlock: "", digitalAnswer: "answer8", fieldClue: "[Add Field Clue 8]", siteCode: "ED-1008" }
+            ],
+
+            // --- TRICKY TRACK (For 3rd, 5th, 7th Semesters) ---
+            tricky: [
+                {
+                    category: "CODE TRACING",
+                    title: "Predict the Output",
+                    questionText: "What number gets printed by this Python code?",
+                    codeBlock: "x = 5\ny = 3\nprint(x + y)", 
+                    digitalAnswer: "8", 
+                    fieldClue: "Where code compiles and coffee gets cold — check the noticeboard in the [CS DEPARTMENT / LIBRARY].",
+                    siteCode: "ED-8821" 
+                },
+                {
+                    category: "LOGIC GATE",
+                    title: "Sensor Validation",
+                    questionText: "A = 1 if library faces East, else 0. B = 1 if Civil block pillars are round, else 0. What is A AND B?",
+                    codeBlock: "",
+                    digitalAnswer: "0",
+                    fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
+                    siteCode: "ED-5542"
+                },
+                {
+                    category: "LOGIC GATE",
+                    title: "Sensor Validation",
+                    questionText: "A car accelerates from rest at 2 m/s² for 5 seconds. How far does it travel in that time?",
+                    codeBlock: "",
+                    digitalAnswer: "25",
+                    fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
+                    siteCode: "ED-5542"
+                },
+                {
+                    category: "LOGIC GATE",
+                    title: "Frequency Modulation",
+                    questionText: "If a signal has a frequency of 50 Hz, what is its time period?",
+                    codeBlock: "",
+                    digitalAnswer: "0.02",
+                    fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
+                    siteCode: "ED-5542"
+                },
+                {
+                    category: "LOGIC GATE",
+                    title: "Directionality of a lost man",
+                    questionText: "A man builds a rectangular house with all four walls facing south. A bear walks past. What color is the bear?",
+                    codeBlock: "",
+                    digitalAnswer: "white",
+                    fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
+                    siteCode: "ED-5542"
+                },
+                {
+                    category: "LOGIC GATE",
+                    title: "Velocity and Displacement",
+                    questionText: "A cyclist travels from Point A to Point B at 20 km/h and returns from B to A at 30 km/h. What is the average speed for the entire trip (not simply 25 km/h)?",
+                    codeBlock: "",
+                    digitalAnswer: "24",
+                    fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
+                    siteCode: "ED-5542"
+                },
+                {
+                    category: "LOGIC GATE",
+                    title: "Sensor Validation",
+                    questionText: "How many 'E's appear in this sentence: 'Every engineer eventually experiences several excellent achievements'?",
+                    codeBlock: "",
+                    digitalAnswer: "9",
+                    fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
+                    siteCode: "ED-5542"
+                },
+                {
+                    category: "LOGIC GATE",
+                    title: "Sensor Validation",
+                    questionText: "A snail is at the bottom of a 10-meter well. Each day it climbs 3 meters, but each night it slips back 2 meters. On which day does it reach the top?",
+                    codeBlock: "",
+                    digitalAnswer: "8",
+                    fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
+                    siteCode: "ED-5542"
+                },
+                { category: "CIPHER", title: "Tricky Q3", questionText: "[Add Question 3 Here]", codeBlock: "", digitalAnswer: "answer3", fieldClue: "[Add Field Clue 3]", siteCode: "ED-2003" },
+                { category: "CIPHER", title: "Tricky Q4", questionText: "[Add Question 4 Here]", codeBlock: "", digitalAnswer: "answer4", fieldClue: "[Add Field Clue 4]", siteCode: "ED-2004" },
+                { category: "CIPHER", title: "Tricky Q5", questionText: "[Add Question 5 Here]", codeBlock: "", digitalAnswer: "answer5", fieldClue: "[Add Field Clue 5]", siteCode: "ED-2005" },
+                { category: "CIPHER", title: "Tricky Q6", questionText: "[Add Question 6 Here]", codeBlock: "", digitalAnswer: "answer6", fieldClue: "[Add Field Clue 6]", siteCode: "ED-2006" },
+                { category: "CIPHER", title: "Tricky Q7", questionText: "[Add Question 7 Here]", codeBlock: "", digitalAnswer: "answer7", fieldClue: "[Add Field Clue 7]", siteCode: "ED-2007" },
+                { category: "CIPHER", title: "Tricky Q8", questionText: "[Add Question 8 Here]", codeBlock: "", digitalAnswer: "answer8", fieldClue: "[Add Field Clue 8]", siteCode: "ED-2008" }
+            ]
+        };
+
+        // ==========================================
+        // GAME STATE & LOGIC
+        // ==========================================
+        let teamInfo = { name: "", sem: "" };
+        let activeQuestions = [];
+        let currentIndex = 0;
+        let timerInterval = null;
+        let elapsedSeconds = 0;
+        let isTimerRunning = false;
+        
+        // Security State
+        let isGameActive = false; 
+
+        const container = document.getElementById('game-container');
+        const header = document.getElementById('game-header');
+        const timeDisplay = document.getElementById('time-display');
+        const watermark = document.getElementById('watermark-layer');
+        const disqualifiedScreen = document.getElementById('disqualified-screen');
+
+        // --- Security Checks ---
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && isGameActive) { triggerDisqualification(); }
+        });
+
+        window.addEventListener("blur", () => {
+            if (isGameActive) { triggerDisqualification(); }
+        });
+
+        function triggerDisqualification() {
+            isGameActive = false;
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            
+            // Hide game elements, show error
+            header.style.display = "none";
+            container.style.display = "none";
+            watermark.style.display = "none";
+            disqualifiedScreen.style.display = "block";
+        }
+
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // --- 1. Registration Screen ---
+        function showRegistration() {
+            container.innerHTML = `
+                <div class="registration-box">
+                    <h2>System Login / Team Setup</h2>
+                    <p style="color: var(--error); font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px;">
+                        ⚠️ WARNING: Once initialized, changing tabs or leaving this browser will result in immediate disqualification.
+                    </p>
+                    <input type="text" id="reg-name" class="reg-input" placeholder="Enter Team Name..." required autocomplete="off">
+                    <select id="reg-sem" class="reg-input">
+                        <option value="1">1st Semester (Newcomers)</option>
+                        <option value="3">3rd Semester</option>
+                        <option value="5">5th Semester</option>
+                        <option value="7">7th Semester</option>
+                    </select>
+                    <button onclick="initializeGame()" style="width: 100%;">Initialize Hunt</button>
+                    <div id="reg-feedback" class="feedback-text text-error"></div>
+                </div>
+            `;
+        }
+
+        // --- 2. Initialize Game ---
+        function initializeGame() {
+            const name = document.getElementById('reg-name').value.trim();
+            const sem = document.getElementById('reg-sem').value;
+
+            if (!name) {
+                document.getElementById('reg-feedback').textContent = "Error: Team name required.";
+                return;
+            }
+
+            // Enter full-screen request (works on most mobile browsers if user initiated)
+            try { document.documentElement.requestFullscreen(); } catch (e) {}
+
+            teamInfo.name = name;
+            teamInfo.sem = sem;
+            isGameActive = true; // Activate security listeners
+
+            // Populate watermark to deter screenshots
+            const wmText = `${name} • `.repeat(200);
+            watermark.textContent = wmText;
+            watermark.style.display = "block";
+
+            const sourceArray = (sem === "1") ? db.easy : db.tricky;
+            activeQuestions = shuffleArray(sourceArray).slice(0, 8); 
+
+            document.getElementById('team-display').textContent = `Team: ${name} | Sem: ${sem}`;
+            header.style.display = "flex";
+
+            isTimerRunning = true;
+            timerInterval = setInterval(() => {
+                if(isTimerRunning) {
+                    elapsedSeconds++;
+                    updateTimerUI();
+                }
+            }, 1000);
+
+            renderStage();
+        }
+
+        function updateTimerUI() {
+            const m = Math.floor(elapsedSeconds / 60);
+            const s = elapsedSeconds % 60;
+            timeDisplay.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            
+            if(!isTimerRunning) timeDisplay.classList.add('timer-paused');
+            else timeDisplay.classList.remove('timer-paused');
+        }
+
+        // --- 3. Render Puzzle UI ---
+        function renderStage() {
+            if (currentIndex >= activeQuestions.length) {
+                renderVictory();
+                return;
+            }
+
+            const q = activeQuestions[currentIndex];
+            document.getElementById('stage-display').textContent = `STAGE ${currentIndex + 1}/${activeQuestions.length}`;
+
+            const codeHTML = q.codeBlock ? `<div class="code-block">${q.codeBlock}</div>` : '';
+
+            container.innerHTML = `
+                <div class="puzzle-box">
+                    <div class="category-label">${q.category}</div>
+                    <h2 class="puzzle-title">${q.title}</h2>
+                    <div class="puzzle-text">${q.questionText}</div>
+                    ${codeHTML}
+                    
+                    <div class="input-row">
+                        <span class="input-prefix">ANSWER></span>
+                        <input type="text" id="digital-answer" autocomplete="off">
+                        <button id="digital-submit" onclick="verifyDigital()">SUBMIT</button>
+                    </div>
+                    <div id="digital-feedback" class="feedback-text text-success"></div>
+                </div>
+
+                <div class="field-box" id="field-clue-box">
+                    <div class="field-header">
+                        <span class="pin-icon">📍</span>
+                        <span class="field-subtitle">FIELD CLUE</span>
+                    </div>
+                    <div class="field-desc">${q.fieldClue}</div>
+                    
+                    <div class="field-subtitle" style="margin-bottom: 5px;">SITE CODE</div>
+                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Find the card posted at that location and type the code on it.</div>
+                    
+                    <div class="site-input-row">
+                        <input type="text" id="site-code" placeholder="ED-XXXX" autocomplete="off">
+                        <button onclick="verifySiteCode()">UNLOCK</button>
+                    </div>
+                    <div id="site-feedback" class="feedback-text text-error"></div>
+                </div>
+            `;
+        }
+
+        // --- 4. Verify Digital Puzzle ---
+        function verifyDigital() {
+            const inputEl = document.getElementById('digital-answer');
+            const btnEl = document.getElementById('digital-submit');
+            const feedback = document.getElementById('digital-feedback');
+            const userAns = inputEl.value.trim().toLowerCase();
+            const correctAns = activeQuestions[currentIndex].digitalAnswer.toLowerCase();
+
+            if (userAns === correctAns) {
+                feedback.textContent = "Correct — your field clue is unlocked below. Timer paused.";
+                feedback.className = "feedback-text text-success";
+                
+                inputEl.disabled = true;
+                btnEl.disabled = true;
+
+                isTimerRunning = false;
+                updateTimerUI();
+
+                document.getElementById('field-clue-box').classList.add('active');
+                window.scrollBy({ top: 150, behavior: 'smooth' });
+            } else {
+                feedback.textContent = "Incorrect output. Try again.";
+                feedback.className = "feedback-text text-error";
+            }
+        }
+
+        // --- 5. Verify Physical Site Code ---
+        function verifySiteCode() {
+            const feedback = document.getElementById('site-feedback');
+            const userAns = document.getElementById('site-code').value.trim().toUpperCase();
+            const correctAns = activeQuestions[currentIndex].siteCode.toUpperCase();
+
+            if (userAns === correctAns) {
+                feedback.textContent = "Access Granted. Loading next stage...";
+                feedback.className = "feedback-text text-success";
+                
+                setTimeout(() => {
+                    currentIndex++;
+                    isTimerRunning = true; 
+                    updateTimerUI();
+                    renderStage();
+                }, 1000);
+            } else {
+                feedback.textContent = "Invalid Site Code.";
+            }
+        }
+
+        // --- 6. Victory Screen ---
+        function renderVictory() {
+            isGameActive = false; // Turn off security listeners so they can safely screenshot their victory
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            
+            watermark.style.display = "none"; // Remove watermark for the final screenshot
+            document.getElementById('stage-display').textContent = `HUNT COMPLETE`;
+
+            container.innerHTML = `
+                <div class="puzzle-box" style="text-align: center;">
+                    <div class="category-label" style="color: var(--success);">MISSION ACCOMPLISHED</div>
+                    <h2 class="puzzle-title">System Override Complete</h2>
+                    <div class="puzzle-text">
+                        Excellent work, <strong>Team ${teamInfo.name}</strong>.<br>
+                        You have successfully completed all 8 stages.
+                    </div>
+                    
+                    <div style="font-size: 3rem; color: var(--success); font-weight: bold; margin: 20px 0;">
+                        ${timeDisplay.textContent}
+                    </div>
+                    
+                    <div style="color: var(--btn-orange); font-size: 0.9rem;">
+                        Screenshot this interface as proof of completion and report back to base.
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize App
+        showRegistration();
+    </script>
+</body>
+</html>
