@@ -495,24 +495,24 @@
 
         const API_URL = 'https://iste-eday-backend.onrender.com/api/update';
 
-function pingServer(statusOverride) {
-    if (!teamInfo.name) return; 
-    let currentStatus = isGameActive ? "PLAYING" : "LOCKED";
-    if (statusOverride) currentStatus = statusOverride;
+        function pingServer(statusOverride) {
+            if (!teamInfo.name) return; 
+            let currentStatus = isGameActive ? "PLAYING" : "LOCKED";
+            if (statusOverride) currentStatus = statusOverride;
 
-    console.log("The current URL is:", API_URL);
-    fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            name: teamInfo.name,
-            sem: teamInfo.sem,
-            stage: currentIndex + 1,
-            time: elapsedSeconds,
-            status: currentStatus
-        })
-    }).catch(err => console.log("Offline fail", err));
-}
+            // HARDCODE THE URL DIRECTLY HERE:
+            fetch('https://iste-eday-backend.onrender.com/api/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: teamInfo.name,
+                    sem: teamInfo.sem,
+                    stage: currentIndex + 1,
+                    time: elapsedSeconds,
+                    status: currentStatus
+                })
+            }).catch(err => console.log("Offline fail", err));
+        }
     </script>
 </body>
 </html>
