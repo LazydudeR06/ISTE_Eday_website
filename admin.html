@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hunt Admin Command Center</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background: #0a1128; color: #38bdf8; padding: 20px; }
+        h1 { color: #f6c07a; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(15, 23, 42, 0.85); }
+        th, td { border: 1px solid rgba(56, 189, 248, 0.4); padding: 12px; text-align: left; color: #e2e8f0; }
+        th { background: #050b14; color: #fca5a5; }
+        .status-playing { color: #f6c07a; }
+        .status-finished { color: #22c55e; font-weight: bold; }
+        .status-disqualified { color: #ef4444; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Engineers' Day - Live Monitoring</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Team Name</th>
+                <th>Semester</th>
+                <th>Current Stage</th>
+                <th>Elapsed Time (s)</th>
+                <th>Status</th>
+                <th>Last Ping</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboard"></tbody>
+    </table>
+
+    <script>
+        // REPLACE WITH YOUR ACTUAL RENDER URL
+        const BACKEND_URL = 'https://iste-eday-backend.onrender.com'; 
+
+        async function fetchAdminData() {
+            try {
+                const response = await fetch(BACKEND_URL);
+                const teams = await response.json();
+                const tbody = document.getElementById('leaderboard');
+                tbody.innerHTML = ''; 
+
+                teams.forEach(team => {
+                    let statusClass = 'status-playing';
+                    if (team.status === 'FINISHED') statusClass = 'status-finished';
+                    if (team.status === 'DISQUALIFIED') statusClass = 'status-disqualified';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${team.name}</td>
+                            <td>${team.sem}</td>
+                            <td>${team.stage} / 8</td>
+                            <td>${team.time}</td>
+                            <td class="${statusClass}">${team.status}</td>
+                            <td>${team.lastUpdated}</td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        fetchAdminData();
+        setInterval(fetchAdminData, 3000);
+    </script>
+</body>
+</html>

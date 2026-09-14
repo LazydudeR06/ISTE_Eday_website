@@ -337,7 +337,7 @@
                 },
                 { category: "PUZZLE", title: "Easy Q6", questionText: "[Add Question 6 Here]", codeBlock: "", digitalAnswer: "answer6", fieldClue: "[Add Field Clue 6]", siteCode: "ED-1006" },
                 { category: "PUZZLE", title: "Easy Q7", questionText: "[Add Question 7 Here]", codeBlock: "", digitalAnswer: "answer7", fieldClue: "[Add Field Clue 7]", siteCode: "ED-1007" },
-                { category: "PUZZLE", title: "Easy Q8", questionText: "[Add Question 8 Here]", codeBlock: "", digitalAnswer: "answer8", fieldClue: "[Add Field Clue 8]", siteCode: "ED-1008" }
+                { category: "PUZZLE", title: "Easy Q8", questionText: "[Add Question 8 Here]", codeBlock: "", digitalAnswer: "answer8", fieldClue: "[Add Field Clue 8]", siteCode: "ED-1008" },
             ],
 
             // --- TRICKY TRACK (For 3rd, 5th, 7th Semesters) ---
@@ -414,10 +414,6 @@
                     fieldClue: "Find the grassy mound near the sports grounds. Look for the blue marker.",
                     siteCode: "ED-5542"
                 },
-                { category: "CIPHER", title: "Tricky Q3", questionText: "[Add Question 3 Here]", codeBlock: "", digitalAnswer: "answer3", fieldClue: "[Add Field Clue 3]", siteCode: "ED-2003" },
-                { category: "CIPHER", title: "Tricky Q4", questionText: "[Add Question 4 Here]", codeBlock: "", digitalAnswer: "answer4", fieldClue: "[Add Field Clue 4]", siteCode: "ED-2004" },
-                { category: "CIPHER", title: "Tricky Q5", questionText: "[Add Question 5 Here]", codeBlock: "", digitalAnswer: "answer5", fieldClue: "[Add Field Clue 5]", siteCode: "ED-2005" },
-                { category: "CIPHER", title: "Tricky Q6", questionText: "[Add Question 6 Here]", codeBlock: "", digitalAnswer: "answer6", fieldClue: "[Add Field Clue 6]", siteCode: "ED-2006" },
                 { category: "CIPHER", title: "Tricky Q7", questionText: "[Add Question 7 Here]", codeBlock: "", digitalAnswer: "answer7", fieldClue: "[Add Field Clue 7]", siteCode: "ED-2007" },
                 { category: "CIPHER", title: "Tricky Q8", questionText: "[Add Question 8 Here]", codeBlock: "", digitalAnswer: "answer8", fieldClue: "[Add Field Clue 8]", siteCode: "ED-2008" }
             ]
@@ -427,7 +423,7 @@
         // GAME STATE & LOGIC
         // ==========================================
         let teamInfo = { name: "", sem: "" };
-        let activeQuestions = [];
+        let activeStages = [];
         let currentIndex = 0;
         let timerInterval = null;
         let elapsedSeconds = 0;
@@ -543,13 +539,17 @@
 
         // --- 3. Render Puzzle UI ---
         function renderStage() {
-            if (currentIndex >= activeQuestions.length) {
+            if (currentIndex >= activeStages.length) {
                 renderVictory();
                 return;
             }
 
-            const q = activeQuestions[currentIndex];
-            document.getElementById('stage-display').textContent = `STAGE ${currentIndex + 1}/${activeQuestions.length}`;
+            const stageData = activeStages[currentIndex];
+            
+            // DYNAMIC ROUTING: Serve 'easy' or 'tricky' based on the saved semester
+            const q = (teamInfo.sem === "1") ? stageData.easy : stageData.tricky;
+            
+            document.getElementById('stage-display').textContent = `STAGE ${currentIndex + 1}/${activeStages.length}`;
 
             const codeHTML = q.codeBlock ? `<div class="code-block">${q.codeBlock}</div>` : '';
 
@@ -573,7 +573,8 @@
                         <span class="pin-icon">📍</span>
                         <span class="field-subtitle">FIELD CLUE</span>
                     </div>
-                    <div class="field-desc">${q.fieldClue}</div>
+                    <!-- Load the shared field clue from stageData -->
+                    <div class="field-desc">${stageData.fieldClue}</div>
                     
                     <div class="field-subtitle" style="margin-bottom: 5px;">SITE CODE</div>
                     <div style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Find the card posted at that location and type the code on it.</div>
@@ -593,7 +594,10 @@
             const btnEl = document.getElementById('digital-submit');
             const feedback = document.getElementById('digital-feedback');
             const userAns = inputEl.value.trim().toLowerCase();
-            const correctAns = activeQuestions[currentIndex].digitalAnswer.toLowerCase();
+            
+            // Check answer against dynamically assigned difficulty
+            const currentStage = activeStages[currentIndex];
+            const correctAns = (teamInfo.sem === "1") ? currentStage.easy.digitalAnswer.toLowerCase() : currentStage.tricky.digitalAnswer.toLowerCase();
 
             if (userAns === correctAns) {
                 feedback.textContent = "Correct — your field clue is unlocked below. Timer paused.";
