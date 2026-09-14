@@ -251,7 +251,7 @@
         let timerInterval = null;
         let elapsedSeconds = 0;
         let isTimerRunning = false;
-        
+        let failedAttempts = 0;
         let isGameActive = false; 
 
         const container = document.getElementById('game-container');
@@ -361,6 +361,8 @@
         }
 
         function renderStage() {
+            failedAttempts = 0;
+
             if (currentIndex >= activeStages.length) {
                 renderVictory();
                 return;
@@ -420,7 +422,7 @@
             const correctAns = (teamInfo.sem === "1") ? currentStage.easy.digitalAnswer.toLowerCase() : currentStage.tricky.digitalAnswer.toLowerCase();
 
             if (userAns === correctAns) {
-                feedback.textContent = "Correct — your field clue is unlocked below. Timer paused.";
+                feedback.innerHTML = "Correct — your field clue is unlocked below. Timer paused.";
                 feedback.className = "feedback-text text-success";
                 
                 inputEl.disabled = true;
@@ -431,7 +433,18 @@
                 document.getElementById('field-clue-box').classList.add('active');
                 window.scrollBy({ top: 150, behavior: 'smooth' });
             } else {
-                feedback.textContent = "Incorrect output. Try again.";
+                // PENALTY SYSTEM LOGIC
+                failedAttempts++;
+                
+                if (failedAttempts > 1) {
+                    elapsedSeconds += 15; // Add 15 seconds to the main timer
+                    updateTimerUI(); // Instantly visually update the clock
+                    pingServer("PENALTY APPLIED"); // Ping admin dashboard about the struggle
+                    feedback.innerHTML = `Incorrect. <strong>+15s penalty applied!</strong> Try again.`;
+                } else {
+                    feedback.innerHTML = `Incorrect. Warning: Your next wrong answer will result in a 15s penalty.`;
+                }
+                
                 feedback.className = "feedback-text text-error";
             }
         }
