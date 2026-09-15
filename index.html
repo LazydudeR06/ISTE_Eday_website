@@ -261,12 +261,31 @@
         const disqualifiedScreen = document.getElementById('disqualified-screen');
 
         // Security Checks 
-        document.addEventListener("visibilitychange", () => {
-            if (document.hidden && isGameActive) { triggerDisqualification(); }
-        });
+        // --- Security Checks (Updated with Grace Period) ---
+        let dqTimer = null;
+        const GRACE_PERIOD_MS = 15000; // 15 seconds to return to the game
 
-        window.addEventListener("blur", () => {
-            if (isGameActive) { triggerDisqualification(); }
+        // We REMOVED the "blur" listener completely to prevent notification-based DQs
+
+        document.addEventListener("visibilitychange", () => {
+            if (!isGameActive) return;
+
+            if (document.hidden) {
+                // The screen turned off, or they switched tabs. Start the countdown.
+                pingServer("BACKGROUNDED - WARNING");
+                
+                dqTimer = setTimeout(() => {
+                    triggerDisqualification();
+                }, GRACE_PERIOD_MS);
+                
+            } else {
+                // They came back to the tab/unlocked the phone in time!
+                if (dqTimer) {
+                    clearTimeout(dqTimer);
+                    dqTimer = null;
+                    pingServer("RETURNED IN TIME");
+                }
+            }
         });
 
         function triggerDisqualification() {
